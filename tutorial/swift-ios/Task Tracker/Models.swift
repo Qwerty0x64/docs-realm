@@ -3,42 +3,33 @@
 //  Task Tracker
 //
 //  Created by MongoDB on 2020-05-07.
-//  Copyright © 2020 MongoDB, Inc. All rights reserved.
+//  Copyright © 2020-2021 MongoDB, Inc. All rights reserved.
 //
 
 import Foundation
 import RealmSwift
 
 // :code-block-start: user-model
+// :state-start: sync
 class User: Object {
-    // :state-start: final
-    @objc dynamic var _id: String = ""
-    @objc dynamic var _partition: String = ""
-    @objc dynamic var name: String = ""
-    let memberOf = RealmSwift.List<Project>()
-    override static func primaryKey() -> String? {
-        return "_id"
-    }
-    // :state-end: :state-uncomment-start: start
-    // // TODO: Add User model (see SDKs panel in Realm UI)
-    // :state-uncomment-end:
+    @Persisted(primaryKey: true) var _id: String = ""
+    @Persisted var name: String = ""
+    @Persisted var memberOf: List<Project>
 }
+// :state-end:
 // :code-block-end:
-
 // :code-block-start: project-model
+// :state-start: sync
 class Project: EmbeddedObject {
-    // :state-start: final
-    @objc dynamic var name: String?
-    @objc dynamic var partition: String?
+    @Persisted var name: String?
+    @Persisted var partition: String?
     convenience init(partition: String, name: String) {
         self.init()
         self.partition = partition
         self.name = name
     }
-    // :state-end: :state-uncomment-start: start
-    // // TODO: Add Project model (see SDKs panel in Realm UI)
-    // :state-uncomment-end:
 }
+// :state-end:
 // :code-block-end:
 
 enum TaskStatus: String {
@@ -48,16 +39,12 @@ enum TaskStatus: String {
 }
 
 // :code-block-start: task-model
-// :state-start: final
+// :state-start: local sync
 class Task: Object {
-    @objc dynamic var _id: ObjectId = ObjectId.generate()
-    @objc dynamic var _partition: String = ""
-    @objc dynamic var name: String = ""
-    @objc dynamic var owner: String?
-    @objc dynamic var status: String = ""
-    override static func primaryKey() -> String? {
-        return "_id"
-    }
+    @Persisted(primaryKey: true) var _id: ObjectId
+    @Persisted var name: String = ""
+    @Persisted var owner: String?
+    @Persisted var status: String = ""
 
     var statusEnum: TaskStatus {
         get {
@@ -68,9 +55,8 @@ class Task: Object {
         }
     }
 
-    convenience init(partition: String, name: String) {
+    convenience init(name: String) {
         self.init()
-        self._partition = partition
         self.name = name
     }
 }

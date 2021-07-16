@@ -12,9 +12,12 @@ HTTP Endpoint Configuration Files
    └── http_endpoints/
        └── <Service Name>/
            ├── config.json
-           └── <Webhook Name>/
-               ├── config.json
-               └── source.js
+           ├── rules/
+           │   └── <Rule Name>.json
+           └── incoming_webhooks/
+               └── <Webhook Name>/
+                   ├── config.json
+                   └── source.js
 
 HTTP Service Configuration
 --------------------------
@@ -53,6 +56,45 @@ service in its own subdirectory within ``/http_endpoints``.
      - Additional configuration options for the service. HTTP Endpoints
        currently have no additional configuration options.
 
+Service Action Rules
+--------------------
+
+You define :ref:`service action rules <service-rules>` in the service's
+``rules/`` sub-directory. Each rule maps to its own ``.json`` configuration file
+with the same name as the rule.
+
+.. code-block:: json
+   :caption: http_endpoints/<Service Name>/rules/<Rule Name>.json
+
+   {
+     "name": "<Rule Name>",
+     "actions": ["<Service Action Name>"],
+     "when": { <JSON Rule Expression> }
+   }
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 30
+
+   * - Field
+     - Description
+   
+   * - | ``name``
+       | String
+     - The name of the service rule. The name may be at most 64
+       characters long and can only contain ASCII letters, numbers,
+       underscores, and hyphens.
+   
+   * - | ``actions``
+       | Array<String>
+     - A list of :ref:`HTTP actions <http-service-actions>` that the rule
+       applies to.
+   
+   * - | ``when``
+       | Document
+     - A :doc:`rule expression </services/json-expressions>` that
+       evaluates to ``true`` when the rule applies to a given request.
+
 .. _config-incoming-webhooks:
 
 Incoming Webhooks
@@ -62,7 +104,7 @@ Configuration
 ~~~~~~~~~~~~~
 
 .. code-block:: json
-   :caption: http_endpoints/<Service Name>/<Webhook Name>/config.json
+   :caption: http_endpoints/<Service Name>/incoming_webhooks/<Webhook Name>/config.json
    
    {
      "name": "<Webhook Name>",
@@ -70,9 +112,9 @@ Configuration
      "run_as_authed_user": <Boolean>,
      "run_as_user_id": "<Realm User ID>",
      "run_as_user_id_script_source": "<Function Source Code>",
-     "respond_result": <Boolean>,
      "fetch_custom_user_data": <Boolean>,
      "create_user_on_auth": <Boolean>,
+     "respond_result": <Boolean>,
      "options": {
        "httpMethod": "<HTTP Method>",
        "validationMethod": "<Webhook Validation Method>",
@@ -135,6 +177,26 @@ Configuration
        the body of the HTTP response it sends to the client that initiated the
        webhook request.
    
+   * - | ``fetch_custom_user_data``
+       | Boolean
+     - If ``true``, {+service-short+} queries the requesting user's :ref:`custom
+       user data <custom-user-data>` and, if it exists, exposes the data as an
+       object on the ``context.user.custom_data`` property.
+       
+       This option is only available if ``run_as_authed_user`` is set to
+       ``true``.
+   
+   * - | ``create_user_on_auth``
+       | Boolean
+     - If ``true``, {+service-short+} automatically creates a new user based
+       on the provided user credentials if they don't match an already existing
+       user (e.g. no other user has the specified email address). The
+       authentication provider that corresponds to the credentials must be
+       enabled at the time of the request to create a new user.
+       
+       This option is only available if ``run_as_authed_user`` is set to
+       ``true``.
+   
    * - | ``options``
        | Document
      - A document that contains configuration options for the webhook.
@@ -185,4 +247,4 @@ request calls the webhook.
 .. literalinclude:: /includes/webhook-function-example.js
    :language: javascript
    :emphasize-lines: 3, 10-11, 14-15
-   :caption: http_endpoints/<Service Name>/<Webhook Name>/source.js
+   :caption: http_endpoints/<Service Name>/incoming_webhooks/<Webhook Name>/source.js

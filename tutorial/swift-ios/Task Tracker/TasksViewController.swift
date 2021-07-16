@@ -3,7 +3,7 @@
 //  Task Tracker
 //
 //  Created by MongoDB on 2020-05-07.
-//  Copyright © 2020 MongoDB, Inc. All rights reserved.
+//  Copyright © 2020-2021 MongoDB, Inc. All rights reserved.
 //
 
 import UIKit
@@ -13,10 +13,9 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     // :code-block-start: properties
     let tableView = UITableView()
-    let partitionValue: String
     let realm: Realm
     var notificationToken: NotificationToken?
-    // :state-start: final
+    // :state-start: local sync
     let tasks: Results<Task>
     // :state-end: :state-uncomment-start: start
     // // TODO: Use Realm Results collection for `tasks`
@@ -25,19 +24,10 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
     // :code-block-end:
 
     // :code-block-start: init
-    required init(realm: Realm, title: String) {
-
-        // Ensure the realm was opened with sync.
-        guard let syncConfiguration = realm.configuration.syncConfiguration else {
-            fatalError("Sync configuration not found! Realm not opened with sync?")
-        }
-
-        self.realm = realm
-
-        // Partition value must be of string type.
-        partitionValue = syncConfiguration.partitionValue!.stringValue!
-
-        // :state-start: final
+    required init(realmConfiguration: Realm.Configuration, title: String) {
+        self.realm = try! Realm(configuration: realmConfiguration)
+        
+        // :state-start: local sync
         // Access all tasks in the realm, sorted by _id so that the ordering is defined.
         tasks = realm.objects(Task.self).sorted(byKeyPath: "_id")
         // :state-end: :state-uncomment-start: start
@@ -48,7 +38,7 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
         self.title = title
 
-        // :state-start: final
+        // :state-start: local sync
         // Observe the tasks for changes. Hang on to the returned notification token.
         notificationToken = tasks.observe { [weak self] (changes) in
             guard let tableView = self?.tableView else { return }
@@ -87,7 +77,7 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
     // :code-block-start: deinit
     deinit {
-        // :state-start: final
+        // :state-start: local sync
         // Always invalidate any notification tokens when you are done with them.
         notificationToken?.invalidate()
         // :state-end: :state-uncomment-start: start
@@ -107,13 +97,17 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addButtonDidClick))
 
-        if isOwnTasks() {
-            // Only set up the manage team button if these are tasks the user owns.
-            toolbarItems = [
-                UIBarButtonItem(title: "Manage Team", style: .plain, target: self, action: #selector(manageTeamButtonDidClick))
-            ]
-            navigationController?.isToolbarHidden = false
-        }
+        // :code-block-start: check-if-own-tasks
+        // :state-uncomment-start: sync
+        // if isOwnTasks() {
+        //     // Only set up the manage team button if these are tasks the user owns.
+        //     toolbarItems = [
+        //         UIBarButtonItem(title: "Manage Team", style: .plain, target: self, action: #selector(manageTeamButtonDidClick))
+        //     ]
+        //     navigationController?.isToolbarHidden = false
+        // }
+        // :state-uncomment-end:
+        // :code-block-end:
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -151,9 +145,10 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
             let textField = alertController.textFields![0] as UITextField
 
             // :code-block-start: add-button-did-click
-            // :state-start: final
+            
+            // :state-start: local sync
             // Create a new Task with the text that the user entered.
-            let task = Task(partition: self.partitionValue, name: textField.text ?? "New Task")
+            let task = Task(name: textField.text ?? "New Task")
 
             // Any writes to the Realm must occur in a write block.
             try! self.realm.write {
@@ -161,7 +156,10 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 self.realm.add(task)
             }
             // :state-end: :state-uncomment-start: start
-            // // TODO: Create a Task instance and add it to the realm in a write block.
+            // // TODO: Replace the following code with code to create a Task instance and add it to the realm in a write block.
+            // let alertController = UIAlertController(title: "TODO", message: "Implement add task functionality in TasksViewController.swift", preferredStyle: .alert)
+            // alertController.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+            // self.present(alertController, animated: true)
             // :state-uncomment-end:
             // :code-block-end:
         }))
@@ -183,7 +181,7 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
         let actionSheet: UIAlertController = UIAlertController(title: task.name, message: "Select an action", preferredStyle: .actionSheet)
 
         // :code-block-start: populate-action-sheet
-        // :state-start: final
+        // :state-start: local sync
         // If the task is not in the Open state, we can set it to open. Otherwise, that action will not be available.
         // We do this for the other two states -- InProgress and Complete.
         if task.statusEnum != .Open {
@@ -232,32 +230,36 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
         // User can swipe to delete items.
         let task = tasks[indexPath.row]
 
-        // :state-start: final
+        // :state-start: local sync
         // All modifications to a realm must happen in a write block.
         try! realm.write {
             // Delete the Task.
             realm.delete(task)
         }
         // :state-end: :state-uncomment-start: start
-        // // TODO: delete the task from the realm in a write block.
+        // // TODO: Replace the following code with code to delete the task from the realm in a write block.
+        // let alertController = UIAlertController(title: "TODO", message: "Implement delete functionality in TasksViewController.swift", preferredStyle: .alert)
+        // alertController.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+        // self.present(alertController, animated: true)
         // :state-uncomment-end:
     }
     // :code-block-end:
 
-    @objc func manageTeamButtonDidClick() {
-        present(UINavigationController(rootViewController: ManageTeamViewController()), animated: true)
-    }
+    // :code-block-start: manage-button-did-click
+    // :state-uncomment-start: sync
+    // @objc func manageTeamButtonDidClick() {
+    //     present(UINavigationController(rootViewController: ManageTeamViewController()), animated: true)
+    // }
+    // :state-uncomment-end:
+    // :code-block-end:
 
+    // :state-start: sync
     // :code-block-start: is-own-tasks
     // Returns true if these are the user's own tasks.
     func isOwnTasks() -> Bool {
-        // :state-start: final
-        return partitionValue == "project=\(app.currentUser!.id)"
-        // :state-end: :state-uncomment-start: start
-        // // TODO: Check if the partition value matches the user's project's partition value,
-        // // which should look like "project=\(app.currentUser()!.id!)"
-        // return false
-        // :state-uncomment-end:
+        let partitionValue = self.realm.configuration.syncConfiguration?.partitionValue?.stringValue
+        return partitionValue != nil && partitionValue == "project=\(app.currentUser!.id)"
     }
     // :code-block-end:
+    // :state-end:
 }

@@ -3,14 +3,14 @@
 //  Task Tracker
 //
 //  Created by MongoDB on 2020-07-30.
-//  Copyright © 2020 MongoDB, Inc. All rights reserved.
+//  Copyright © 2020-2021 MongoDB, Inc. All rights reserved.
 //
-
+// :code-block-start: complete
+// :state-start: sync
 import UIKit
 import RealmSwift
 
 class ManageTeamViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-
     let tableView = UITableView()
     var activityIndicator = UIActivityIndicatorView(style: .large)
     var members: [Member] = []
@@ -78,13 +78,12 @@ class ManageTeamViewController: UIViewController, UITableViewDelegate, UITableVi
     func fetchTeamMembers() {
         // Start loading indicator
         activityIndicator.startAnimating()
-        // :state-start: final
         let user = app.currentUser!
 
         user.functions.getMyTeamMembers([]) { [weak self](result, error) in
             DispatchQueue.main.async {
                 guard self != nil else {
-                    // This can happen if the view is dismissed 
+                    // This can happen if the view is dismissed
                     // before the operation completes
                     print("Team members list no longer needed.")
                     return
@@ -106,11 +105,6 @@ class ManageTeamViewController: UIViewController, UITableViewDelegate, UITableVi
                 self!.tableView.reloadData()
             }
         }
-        // :state-end: :state-uncomment-start: start
-        // // TODO: use the app's current user's functions object to call the getMyTeamMembers function
-        // // on the backend. Create Member objects to represent the result in the completion handler
-        // // and reload the table data to refresh the view.
-        // :state-uncomment-end:
     }
     // :code-block-end:
 
@@ -118,15 +112,9 @@ class ManageTeamViewController: UIViewController, UITableViewDelegate, UITableVi
     func addTeamMember(email: String) {
         print("Adding member: \(email)")
         activityIndicator.startAnimating()
-        // :state-start: final
         let user = app.currentUser!
 
         user.functions.addTeamMember([AnyBSON(email)], self.onTeamMemberOperationComplete)
-        // :state-end: :state-uncomment-start: start
-        // // TODO: use the app's current user's functions object to call the addTeamMember function
-        // // on the backend with the given email converted to AnyBSON. Use `self.onTeamMemberOperationComplete`
-        // // as the completion handler.
-        // :state-uncomment-end:
     }
     // :code-block-end:
 
@@ -134,15 +122,9 @@ class ManageTeamViewController: UIViewController, UITableViewDelegate, UITableVi
     func removeTeamMember(email: String) {
         print("Removing member: \(email)")
         activityIndicator.startAnimating()
-        // :state-start: final
         let user = app.currentUser!
 
         user.functions.removeTeamMember([AnyBSON(email)], self.onTeamMemberOperationComplete)
-        // :state-end: :state-uncomment-start: start
-        // // TODO: use the app's current user's functions object to call the removeTeamMember function
-        // // on the backend with the given email converted to AnyBSON. Use `self.onTeamMemberOperationComplete`
-        // // as the completion handler.
-        // :state-uncomment-end:
     }
     // :code-block-end:
 
@@ -161,7 +143,7 @@ class ManageTeamViewController: UIViewController, UITableViewDelegate, UITableVi
                 // Error from Realm (failed function call, network error...)
                 errorMessage = realmError!.localizedDescription
             } else if let resultDocument = result?.documentValue {
-                // Check for user error. The addTeamMember function we defined returns an object 
+                // Check for user error. The addTeamMember function we defined returns an object
                 // with the `error` field set if there was a user error.
                 errorMessage = resultDocument["error"]??.stringValue
             } else {
@@ -190,3 +172,5 @@ class ManageTeamViewController: UIViewController, UITableViewDelegate, UITableVi
         }
     }
 }
+// :state-end: sync
+// :code-block-end:

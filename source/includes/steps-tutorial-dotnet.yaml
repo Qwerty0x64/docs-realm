@@ -4,7 +4,7 @@ ref: clone-the-client-app-repository
 content: |
   We've already put together a task tracker Xamarin application that has
   most of the code you'll need. You can clone the client application repository
-  directly from GitHub:
+  directly from :github:`GitHub <mongodb-university/realm-tutorial-dotnet>`:
 
   .. code-block:: shell
 
@@ -201,6 +201,8 @@ content: |
 
   .. literalinclude:: /tutorial/generated/code/final/ProjectPage.xaml.codeblock.find-user.cs
      :language: csharp
+
+  .. include:: /includes/note-tutorial-custom-user-data-permissions.rst
 
   Once you have the user, call ``SetUpProjectList()``. In that method, you populate 
   the ``MyProjects`` collection (an ``ObservableCollection<Project>``), which is 

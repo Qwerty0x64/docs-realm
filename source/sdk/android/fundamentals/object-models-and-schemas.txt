@@ -1,5 +1,4 @@
 .. _android-object-models-and-schemas:
-.. _android-realm-objects:
 
 =====================================
 Object Models & Schemas - Android SDK
@@ -51,6 +50,8 @@ created, modified, or deleted.
 Primary Keys
 ------------
 
+.. versionadded:: Since version 10.6.0, {+client-database+} automatically indexes primary keys.
+
 {+service-short+} treats fields marked with the
 :java-sdk:`@PrimaryKey <io/realm/annotations/PrimaryKey.html>` annotation
 as primary keys for their corresponding object schema. Primary keys are
@@ -68,11 +69,12 @@ subject to the following limitations:
   with a different primary key value.
 
 - :ref:`Embedded objects <android-embedded-objects>` cannot define a
-  a primary key.
+  primary key.
 
 You can create a primary key with any of the following types:
 
 - ``String``
+- ``UUID``
 - ``ObjectId``
 - ``Integer`` or ``int``
 - ``Long`` or ``long``
@@ -101,7 +103,8 @@ Embedded objects cannot contain primary keys.
 
 .. seealso::
 
-   :ref:`Usage Example: Primary Key <android-primary-key>`
+   - :ref:`Usage Examples: Define a Primary Key <android-primary-key>`
+   - :ref:`Usage Examples: Find a Specific Object by Primary Key <android-find-a-specific-object-by-primary-key>`
 
 .. _android-optionality:
 
@@ -122,6 +125,7 @@ You cannot mark a ``RealmList`` of ``RealmObject`` subtypes as required.
 You can make any of the following types required:
 
 - ``String``
+- ``UUID``
 - ``ObjectId``
 - ``Integer``
 - ``Long``
@@ -156,8 +160,10 @@ nullable, and cannot be made required.
 
       - ``String``
       - ``Date``
+      - ``UUID``
       - ``ObjectId``
       - ``Decimal128``
+      - ``RealmAny``
 
       You can require any type that ends with the Kotlin ``?``
       operator, such as ``Int?``.
@@ -174,6 +180,7 @@ nullable, and cannot be made required.
 
       - ``String``
       - ``Date``
+      - ``UUID``
       - ``ObjectId``
       - ``Integer``
       - ``Long``
@@ -189,8 +196,8 @@ nullable, and cannot be made required.
 
 .. seealso::
 
-   :ref:`Usage Example: Required Fields <android-required-field>`
-   :ref:`Usage Example: Optional Fields <android-optional-field>`
+   - :ref:`Usage Example: Required Fields <android-required-field>`
+   - :ref:`Usage Example: Optional Fields <android-optional-field>`
 
 .. _android-relationships-fundamentals:
 
@@ -214,8 +221,8 @@ relationship field reduces boilerplate query code and capacity for error.
 
 .. seealso::
 
-   :ref:`Fundamentals: Relationships <android-relationships-fundamentals>`
-   :ref:`Usage Example: Define a Relationship Field <android-relationships>`
+   - :ref:`Fundamentals: Relationships <android-client-relationships>`
+   - :ref:`Usage Example: Define a Relationship Field <android-relationships>`
 
 .. _android-indexes-fundamentals:
 
@@ -243,6 +250,7 @@ adding an index to a field will increase disk space consumed by your
 You can index fields with the following types:
 
 - ``String``
+- ``UUID``
 - ``ObjectId``
 - ``Integer`` or ``int``
 - ``Long`` or ``long``
@@ -250,6 +258,7 @@ You can index fields with the following types:
 - ``Byte`` or ``byte[]``
 - ``Boolean`` or ``bool``
 - ``Date``
+- ``RealmAny``
 
 {+service-short+} creates indexes for fields annotated with
 :java-sdk:`@Index <io/realm/annotations/Index.html>`. Indexes speed up
@@ -282,10 +291,59 @@ defined {+service-short+} objects.
 
    :ref:`Usage Example: Omit Classes from your Realm Schema <android-omit-classes-from-schema>`
 
+.. _android-realm-objects:
+
+Realm Objects
+-------------
+
+Unlike normal Java objects, which contain their own data, a
+{+service-short+} object doesn’t contain data. Instead,
+{+service-short+} objects read and write properties directly to
+{+client-database+}.
+
+Instances of Realm objects can be either **managed** or **unmanaged**.
+
+- **Managed** objects are:
+
+  - persisted in {+client-database+}
+
+  - always up to date
+
+  - thread-confined
+
+  - generally more lightweight than the unmanaged version, as they take
+    up less space on the Java heap.
+
+- **Unmanaged** objects are just like ordinary Java objects, since
+  they are not persisted and never update automatically.
+  You can move unmanaged objects freely across threads.
+
+You can convert between the two states using
+:java-sdk:`realm.copyToRealm()
+<io/realm/Realm.html#copyToRealm-E-io.realm.ImportFlag...->`
+and :java-sdk:`realm.copyFromRealm()
+<io/realm/Realm.html#copyFromRealm-E->`.
+
+.. _android-realm-proxy:
+
+RealmProxy
+~~~~~~~~~~
+
+The ``RealmProxy`` classes are the {+service-short+} SDK's way of
+ensuring that {+service-short+} objects don't contain any data
+themselves. Instead, each class's ``RealmProxy`` accesses data directly
+in the database.
+
+For every model class in your project, the {+service-short+} annotation
+processor generates a corresponding ``RealmProxy`` class. This class
+extends your model class and is returned when you call
+``Realm.createObject()``. In your code, this object works just like your
+model class.
+
 .. _android-realm-object-limitations:
 
 Realm Object Limitations
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 {+service-short+} objects:
 
